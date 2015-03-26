@@ -2,6 +2,12 @@ package com.github.airk.tool.sobitmap;
 
 import android.graphics.BitmapFactory;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
 /**
  * Created by kevin on 15/3/24.
  * <p/>
@@ -26,5 +32,25 @@ final class Util {
         }
         options.inSampleSize = sampleSize;
         options.inJustDecodeBounds = false;
+    }
+
+    static void inputStreamToFile(File file, InputStream is) {
+        try {
+            OutputStream os = new FileOutputStream(file);
+            byte[] buffer = new byte[4096];
+            int len;
+            while ((len = is.read(buffer)) != -1) {
+                os.write(buffer, 0, len);
+            }
+            os.flush();
+            os.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+            } catch (IOException ignore) {
+            }
+        }
     }
 }

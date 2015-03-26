@@ -1,11 +1,12 @@
 package com.github.airk.tool.sobitmap;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Handler;
-import android.os.Looper;
+import android.os.Message;
 
-import java.io.InputStream;
+import java.io.File;
 import java.util.concurrent.Future;
 
 /**
@@ -13,12 +14,13 @@ import java.util.concurrent.Future;
  * <p/>
  * Bitmap hunt request
  */
-final class Request implements Callback {
+final class Request implements Callback, Runnable {
     final String tag;
     final Uri source;
     final Options options;
     private final Callback callback;
-    final Hunter hunter;
+    final Hunter target;
+    final File cacheDir;
     Future<?> task;
     String key;
     HuntException e;
@@ -27,49 +29,62 @@ final class Request implements Callback {
     long startInMs = -1;
     long costInMs = -1;
 
-    InputStream is;
+    private final Handler handler;
 
-    private Handler handler;
-
-    Request(String tag, Uri source, Options options, Callback callback, Hunter hunter) {
-        this.tag = tag;
+    Request(String tag, Uri source, Options options, Callback callback, Hunter target, Handler handler, File dir) {
+        if (tag == null) {
+            this.tag = "sobitmap_request_" + Integer.toHexString(this.hashCode());
+        } else {
+            this.tag = tag;
+        }
         this.source = source;
         this.options = options;
         this.callback = callback;
-        this.hunter = hunter;
+        this.target = target;
+        this.handler = handler;
+        this.cacheDir = dir;
 
-        handler = new Handler(Looper.getMainLooper());
         key = "KEY:" + source.toString() + "&&" + Integer.toHexString(options.hashCode());
     }
 
     @Override
     public String toString() {
-        return "Request{" +
-                "tag='" + tag + '\'' +
-                ", source=" + source +
-                ", options=" + options +
-                ", callback=" + callback +
-                ", key='" + key + '\'' +
-                '}';
+        return "Request{ Key: " + key +
+                "source: " + source.toString() +
+                "with " + options.toString() + "}";
     }
 
     @Override
-    public void onHunted(final Bitmap bitmap) {
+    public void onHunted(final Bitmap bitmap, final BitmapFactory.Options option) {
+        notifyCallback();
         handler.post(new Runnable() {
             @Override
             public void run() {
-                callback.onHunted(bitmap);
+                callback.onHunted(bitmap, option);
             }
         });
     }
 
     @Override
     public void onException(final HuntException e) {
+        notifyCallback();
         handler.post(new Runnable() {
             @Override
             public void run() {
                 callback.onException(e);
             }
         });
+    }
+
+    private void notifyCallback() {
+        Message msg = new Message();
+        msg.what = SoBitmap.MSG_WHAT_NOTIFY_CALLBACK;
+        msg.obj = tag;
+        handler.sendMessage(msg);
+    }
+
+    @Override
+    public void run() {
+        target.hunt(this);
     }
 }
