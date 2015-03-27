@@ -16,6 +16,7 @@
 
 package com.github.airk.tool.sobitmap;
 
+import android.graphics.Bitmap;
 import android.util.Log;
 
 /**
@@ -28,12 +29,14 @@ public final class Options {
     final long maxOutput;
     final int maxSize;
     final int qualityStep;
+    final Bitmap.CompressFormat format;
 
-    Options(long maxInput, long maxOutput, int maxSize, int qualityStep) {
+    Options(long maxInput, long maxOutput, int maxSize, int qualityStep, Bitmap.CompressFormat format) {
         this.maxInput = maxInput;
         this.maxOutput = maxOutput;
         this.maxSize = maxSize;
         this.qualityStep = qualityStep;
+        this.format = format;
     }
 
     public static class Builder {
@@ -41,6 +44,7 @@ public final class Options {
         long output = SoBitmap.DEFAULT_MAX_OUTPUT;
         int size = -1;
         int step = SoBitmap.DEFAULT_QUALITY_STEP;
+        Bitmap.CompressFormat format = Bitmap.CompressFormat.JPEG;
 
         public Builder() {
         }
@@ -73,10 +77,15 @@ public final class Options {
             return this;
         }
 
+        public Builder format(Bitmap.CompressFormat format) {
+            this.format = format;
+            return this;
+        }
+
         public Options build() {
             if (size == -1)
                 throw new IllegalArgumentException("You must give a valid MAX size by maxSize() method while using custom options.");
-            return new Options(input, output, size, step);
+            return new Options(input, output, size, step, format);
         }
     }
 

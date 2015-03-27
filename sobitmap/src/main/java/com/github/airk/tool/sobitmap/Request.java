@@ -41,9 +41,9 @@ final class Request implements Callback, Runnable {
     String key;
     HuntException e;
     int quality = 100;
-    int recursionCount = -1;
-    long startInMs = -1;
-    long costInMs = -1;
+    int recursionCount = 0;
+    long startAllMs = -1;
+    long startDecodeMs = -1;
 
     private final Handler handler;
 

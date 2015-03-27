@@ -16,6 +16,8 @@
 
 package com.github.airk.tool.sobitmap;
 
+import android.text.TextUtils;
+
 /**
  * Created by kevin on 15/3/24.
  * <p/>
@@ -28,11 +30,17 @@ public class HuntException extends Exception {
     public static final int REASON_IO_EXCEPTION = 0x04;
     public static final int REASON_UNSUPPORT_TYPE = 0x05;
     public static final int REASON_CANT_DECODE = 0x06;
+    public static final int REASON_NETWORK_ERROR = 0x07;
 
     private int reason;
+    private String extra;
 
     public HuntException(int reason) {
         this.reason = reason;
+    }
+
+    public void setExtra(String extra) {
+        this.extra = extra;
     }
 
     public int getReason() {
@@ -58,10 +66,13 @@ public class HuntException extends Exception {
             case REASON_CANT_DECODE:
                 ret = "Can't decode this request.";
                 break;
+            case REASON_NETWORK_ERROR:
+                ret = "Network error.";
+                break;
             default:
                 ret = "unknown";
         }
-        return ret;
+        return ret + (TextUtils.isEmpty(extra) ? "" : (" Extra: " + extra));
     }
 
     @Override

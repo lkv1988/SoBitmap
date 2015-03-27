@@ -58,27 +58,33 @@ abstract class Hunter {
     abstract String tag();
 
     private File cacheFile;
+    private boolean abort = false;
 
     public void hunt(Request request) {
         if (SoBitmap.LOG) {
             Log.d(SoBitmap.TAG, tag() + ":Pre-hunt call.");
         }
         this.request = request;
-        request.startInMs = System.currentTimeMillis();
+        abort = false;
+        request.startAllMs = System.currentTimeMillis();
         cacheFile = preCacheFile();
         if (cacheFile == null || !cacheFile.exists()) {
             Log.e(SoBitmap.TAG, tag() + ": cache file error.");
-            request.onException(new HuntException(HuntException.REASON_FILE_NOT_FOUND));
+            if (request.e == null) {
+                request.e = new HuntException(HuntException.REASON_FILE_NOT_FOUND);
+                request.onException(request.e);
+            }
             return;
         }
+        request.startDecodeMs = System.currentTimeMillis();
         decode();
     }
 
     private void decode() {
-        if (SoBitmap.LOG) {
-            Log.d(SoBitmap.TAG, tag() + ": decode call.");
-        }
         request.recursionCount++;
+        if (SoBitmap.LOG) {
+            Log.d(SoBitmap.TAG, tag() + ": Decode call. " + request.recursionCount + " time, quality " + request.quality + "%.");
+        }
         BitmapFactory.Options bitmapOps = new BitmapFactory.Options();
         bitmapOps.inJustDecodeBounds = true;
 
@@ -90,29 +96,40 @@ abstract class Hunter {
                     bitmapOps);
             Bitmap bitmap = decodeBitmap(bitmapOps);
             if (bitmap == null) {
-                request.onException(new HuntException(HuntException.REASON_CANT_DECODE));
+                request.e = new HuntException(HuntException.REASON_CANT_DECODE);
+                request.onException(request.e);
+                cleanup(cacheFile);
                 return;
             }
-            //TODO format set by user and WEBP bug fix
-            bitmap.compress(Bitmap.CompressFormat.JPEG, request.quality, os);
+            if (abort) {
+                request.onHunted(bitmap, bitmapOps);
+                logTime();
+                cleanup(cacheFile);
+                return;
+            }
+            bitmap.compress(request.options.format, request.quality, os);
             bitmap.recycle();
 
             if (os.toByteArray().length / 1024 > request.options.maxOutput) {
                 if (SoBitmap.LOG) {
                     Log.w(SoBitmap.TAG, tag() + ": Recursion! Reason: not small enough!");
                 }
-                request.quality -= request.options.qualityStep;
+                int newQ = request.quality - request.options.qualityStep;
+                if (newQ <= 0) {
+                    if (SoBitmap.LOG) {
+                        Log.w(SoBitmap.TAG, tag() + ": Abort! The quality is too low.");
+                    }
+                    abort = true;
+                } else {
+                    request.quality = newQ;
+                }
                 os.close();
                 decode();
             } else {
                 Bitmap ret = BitmapFactory.decodeStream(new ByteArrayInputStream(os.toByteArray()));
                 request.e = null;
-                request.costInMs = System.currentTimeMillis() - request.startInMs;
-                if (SoBitmap.LOG && request.recursionCount >= 0) {
-                    Log.d(SoBitmap.TAG, tag() + ": Bitmap hunting finished, cost " + request.costInMs + " MS with recursion "
-                            + request.recursionCount + " times.");
-                }
                 request.onHunted(ret, bitmapOps);
+                logTime();
                 cleanup(cacheFile);
             }
         } catch (OutOfMemoryError ignore) {
@@ -134,6 +151,16 @@ abstract class Hunter {
             } catch (IOException ignore) {
             }
         }
+    }
+
+    private void logTime() {
+        if (!SoBitmap.LOG)
+            return;
+        long now = System.currentTimeMillis();
+        long total = now - request.startAllMs;
+        long decode = now - request.startDecodeMs;
+        Log.d(SoBitmap.TAG, tag() + ": Bitmap hunting finished, cost " + total + " ms in total," +
+                " and decoding cost " + decode + " ms.");
     }
 
     private Bitmap decodeBitmap(BitmapFactory.Options bitmapOps) {

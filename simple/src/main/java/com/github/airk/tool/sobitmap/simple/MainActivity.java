@@ -61,7 +61,7 @@ public class MainActivity extends ActionBarActivity {
 
             @Override
             public void onException(HuntException e) {
-                textView.setText(e.toString());
+                textView.setText(e.getMessage());
             }
         });
     }

@@ -17,6 +17,7 @@
 package com.github.airk.tool.sobitmap;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -101,7 +102,8 @@ public final class SoBitmap {
             Log.d(TAG, "New instance.");
         }
         DisplayMetrics dm = context.getResources().getDisplayMetrics();
-        defaultOps = new Options(DEFAULT_MAX_INPUT, DEFAULT_MAX_OUTPUT, Math.max(dm.heightPixels, dm.widthPixels) * 2, DEFAULT_QUALITY_STEP);
+        defaultOps = new Options(DEFAULT_MAX_INPUT, DEFAULT_MAX_OUTPUT,
+                Math.max(dm.heightPixels, dm.widthPixels) * 2, DEFAULT_QUALITY_STEP, Bitmap.CompressFormat.JPEG);
 
         requestMap = new ConcurrentHashMap<>();
         for (Class<? extends Hunter> cls : HUNTERS) {
