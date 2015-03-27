@@ -9,6 +9,7 @@ warry about the OOM exception, SoBitmap have handled it inside.
 - Support local file and network stream
 - Custom option include max input\output and picture size, and the step of picture's quality, and bitmap compress format(JPG, PNG, WEBP)
 - Use okhttp as the httpclient for downloading
+- All callback happen in UI thread, no need to warry about it
 
 # Usage
 
