@@ -27,6 +27,7 @@ public class HuntException extends Exception {
     public static final int REASON_OOM = 0x03;
     public static final int REASON_IO_EXCEPTION = 0x04;
     public static final int REASON_UNSUPPORT_TYPE = 0x05;
+    public static final int REASON_CANT_DECODE = 0x06;
 
     private int reason;
 
@@ -53,6 +54,9 @@ public class HuntException extends Exception {
                 break;
             case REASON_IO_EXCEPTION:
                 ret = "IOException occurred while hunting bitmap.";
+                break;
+            case REASON_CANT_DECODE:
+                ret = "Can't decode this request.";
                 break;
             default:
                 ret = "unknown";

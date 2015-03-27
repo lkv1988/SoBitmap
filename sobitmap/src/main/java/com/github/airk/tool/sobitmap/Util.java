@@ -53,9 +53,9 @@ final class Util {
     static void inputStreamToFile(File file, InputStream is) {
         try {
             OutputStream os = new FileOutputStream(file);
-            byte[] buffer = new byte[4096];
+            byte[] buffer = new byte[1024];
             int len;
-            while ((len = is.read(buffer)) != -1) {
+            while ((len = is.read(buffer)) > 0) {
                 os.write(buffer, 0, len);
             }
             os.flush();

@@ -12,6 +12,20 @@ warry about the OOM exception, SoBitmap have handled it inside.
 
 # Usage
 
+### Include in your project
+
+- Gradle
+
+```
+repositories {
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+}
+
+dependencies {
+	compile 'com.github.airk000:sobitmap:0.1.+'
+}
+```
+
 ### Permissions
 
 ```

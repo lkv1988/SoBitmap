@@ -89,6 +89,10 @@ abstract class Hunter {
                     bitmapOps.outWidth, bitmapOps.outHeight,
                     bitmapOps);
             Bitmap bitmap = decodeBitmap(bitmapOps);
+            if (bitmap == null) {
+                request.onException(new HuntException(HuntException.REASON_CANT_DECODE));
+                return;
+            }
             //TODO format set by user and WEBP bug fix
             bitmap.compress(Bitmap.CompressFormat.JPEG, request.quality, os);
             bitmap.recycle();
