@@ -7,7 +7,7 @@ warry about the OOM exception, SoBitmap have handled it inside.
 # Feature
 
 - Support local file and network stream
-- Custom option include max input\output and picture size, and the step of picture's quality
+- Custom option include max input\output and picture size, and the step of picture's quality, and bitmap compress format(JPG, PNG, WEBP)
 - Use okhttp as the httpclient for downloading
 
 # Usage
@@ -43,6 +43,7 @@ Api-9 (Android2.3)
 Options options = new Options.Builder()
                 .maxOutput(50) // max output in 50KB
                 .maxSize(1024) //max picture size in pixel
+                .format(Bitmap.CompressFormat.PNG)
                 .build();
 SoBitmap.getInstance(this).setDefaultOption(options);
 ```
@@ -53,7 +54,7 @@ SoBitmap.getInstance(this).setDefaultOption(options);
 - MAX output 300KB
 - STEP 15
 - SIZE max screen size * 2
-
+- Compress format JPEG
 
 
 ### Hunting bitmap
@@ -75,8 +76,6 @@ SoBitmap.getInstance(this).hunt(uri, new Callback() {
 # *TODO List*:
 
 - MediaStore support
-- WebP support
-- User set picture format
 - Multi thread speed up the decoding duration
 
 # License
