@@ -17,7 +17,6 @@
 package com.github.airk.tool.sobitmap;
 
 import android.graphics.Bitmap;
-import android.util.Log;
 
 /**
  * Created by kevin on 15/3/24.
@@ -25,78 +24,96 @@ import android.util.Log;
  * Bitmap hunt options
  */
 public final class Options {
-    final long maxInput;
-    final long maxOutput;
+    /**
+     * 1. Use max input\output and step together
+     */
+    long maxInput = -1L;
+    long maxOutput = -1L;
+    /**
+     * Bitmap compress quality
+     */
+    int qualityStep = -1;
+    /**
+     * 2. Only use the level param then make SoBitmap auto decide all the things inside.
+     */
+    QualityLevel level = null;
+    /**
+     * Whether ignore other parameters but only use the level for auto deciding while hunting.
+     */
+    boolean onlyLevel = false;
+
+    /**
+     * The max output bitmap size for width and height in pixel.
+     */
     final int maxSize;
-    final int qualityStep;
+    /**
+     * JPG, PNG, WEBP, if possible, highly recommend WEBP, fast and small for storage.
+     */
     final Bitmap.CompressFormat format;
 
-    Options(long maxInput, long maxOutput, int maxSize, int qualityStep, Bitmap.CompressFormat format) {
+    public static enum QualityLevel {
+        HIGH {
+            @Override
+            int getStep() {
+                return 5;
+            }
+
+            @Override
+            float getMemoryFactor() {
+                return 0.8f;
+            }
+        },
+        MEDIUM {
+            @Override
+            int getStep() {
+                return 15;
+            }
+
+            @Override
+            float getMemoryFactor() {
+                return 0.5f;
+            }
+        },
+        LOW {
+            @Override
+            int getStep() {
+                return 20;
+            }
+
+            @Override
+            float getMemoryFactor() {
+                return 0.35f;
+            }
+        };
+
+        /**
+         * compress quality step
+         */
+        abstract int getStep();
+
+        /**
+         * memory usage factor of total
+         */
+        abstract float getMemoryFactor();
+    }
+
+    public Options(long maxInput, long maxOutput, int maxSize, int qualityStep, Bitmap.CompressFormat format) {
         this.maxInput = maxInput;
         this.maxOutput = maxOutput;
         this.maxSize = maxSize;
         this.qualityStep = qualityStep;
         this.format = format;
+
+        onlyLevel = false;
+        level = null;
     }
 
-    public static class Builder {
-        long input = SoBitmap.DEFAULT_MAX_INPUT;
-        long output = SoBitmap.DEFAULT_MAX_OUTPUT;
-        int size = -1;
-        int step = SoBitmap.DEFAULT_QUALITY_STEP;
-        Bitmap.CompressFormat format = Bitmap.CompressFormat.JPEG;
+    public Options(int maxSize, Bitmap.CompressFormat format, QualityLevel level) {
+        this.maxSize = maxSize;
+        this.format = format;
+        this.level = level;
 
-        public Builder() {
-        }
-
-        public Builder maxInput(long kb) {
-            input = kb;
-            return this;
-        }
-
-        public Builder maxOutput(long kb) {
-            output = kb;
-            return this;
-        }
-
-        public Builder qualityStep(int step) {
-            if (step <= 0 && step >= 100) {
-                Log.w(SoBitmap.TAG, "Options: step is invalid, will use the default one(15)");
-                this.step = SoBitmap.DEFAULT_QUALITY_STEP;
-            } else {
-                this.step = step;
-            }
-            return this;
-        }
-
-        public Builder maxSize(int sizeInPixel) {
-            if (sizeInPixel < 0) {
-                throw new IllegalArgumentException("Wrong size given, it must be more than 0");
-            }
-            size = sizeInPixel;
-            return this;
-        }
-
-        public Builder format(Bitmap.CompressFormat format) {
-            this.format = format;
-            return this;
-        }
-
-        public Options build() {
-            if (size == -1)
-                throw new IllegalArgumentException("You must give a valid MAX size by maxSize() method while using custom options.");
-            return new Options(input, output, size, step, format);
-        }
-    }
-
-    @Override
-    public String toString() {
-        return "Options{" +
-                "maxInput=" + maxInput +
-                ", maxOutput=" + maxOutput +
-                ", maxSize=" + maxSize +
-                ", qualityStep=" + qualityStep +
-                '}';
+        onlyLevel = true;
     }
 
     @Override
@@ -110,6 +127,8 @@ public final class Options {
         if (maxOutput != options.maxOutput) return false;
         if (maxSize != options.maxSize) return false;
         if (qualityStep != options.qualityStep) return false;
+        if (format != options.format) return false;
+        if (level != options.level) return false;
 
         return true;
     }
@@ -120,6 +139,8 @@ public final class Options {
         result = 31 * result + (int) (maxOutput ^ (maxOutput >>> 32));
         result = 31 * result + maxSize;
         result = 31 * result + qualityStep;
+        result = 31 * result + (format != null ? format.hashCode() : 0);
+        result = 31 * result + (level != null ? level.hashCode() : 0);
         return result;
     }
 }

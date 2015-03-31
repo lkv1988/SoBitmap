@@ -93,10 +93,7 @@ final class Request implements Callback, Runnable {
     }
 
     private void notifyCallback() {
-        Message msg = new Message();
-        msg.what = SoBitmap.MSG_WHAT_NOTIFY_CALLBACK;
-        msg.obj = tag;
-        handler.sendMessage(msg);
+        handler.obtainMessage(SoBitmap.MSG, tag).sendToTarget();
     }
 
     @Override

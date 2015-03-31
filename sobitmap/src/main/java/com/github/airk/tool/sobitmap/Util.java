@@ -16,7 +16,12 @@
 
 package com.github.airk.tool.sobitmap;
 
+import android.app.ActivityManager;
+import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.graphics.BitmapFactory;
+import android.os.Build;
+import android.os.Looper;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -69,4 +74,25 @@ final class Util {
             }
         }
     }
+
+    //We just use 1/5 of the application's memory space
+    static long getAvailableMemorySize(Context context) {
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        long ret = -1L;
+        boolean largeHeap = false;
+        if (Build.VERSION.SDK_INT >= 11) {
+            largeHeap = (context.getApplicationInfo().flags & ApplicationInfo.FLAG_LARGE_HEAP) != 0;
+            if (largeHeap)
+                ret = am.getLargeMemoryClass() * 1024 * 1024;
+        }
+        if (!largeHeap || Build.VERSION.SDK_INT < 11) {
+            ret = am.getMemoryClass() * 1024 * 1024;
+        }
+        return ret / 5;
+    }
+
+    static boolean checkMainThread() {
+        return Looper.getMainLooper().getThread() == Thread.currentThread();
+    }
+
 }

@@ -18,6 +18,7 @@ package com.github.airk.tool.sobitmap;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -31,6 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -54,18 +56,21 @@ public final class SoBitmap {
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private LinkedHashSet<Hunter> hunterSet = new LinkedHashSet<>();
 
+    //TODO just for testcase
     static final long DEFAULT_MAX_INPUT = 5 * 1024 * 1024; // 5MB
     static final long DEFAULT_MAX_OUTPUT = 300 * 1024; //300k
     static final int DEFAULT_QUALITY_STEP = 15;
 
+    static final Options.QualityLevel DEFAULT_LEVEL = Options.QualityLevel.MEDIUM;
+
     private ConcurrentHashMap<String, Request> requestMap;
 
-    static final int MSG_WHAT_NOTIFY_CALLBACK = 0x81;
+    static final int MSG = 1;
     private Handler uiHandler = new Handler(Looper.getMainLooper(), new Handler.Callback() {
         @Override
         public boolean handleMessage(Message msg) {
             switch (msg.what) {
-                case MSG_WHAT_NOTIFY_CALLBACK:
+                case MSG:
                     String tag = (String) msg.obj;
                     requestMap.remove(tag);
                     return true;
@@ -78,6 +83,7 @@ public final class SoBitmap {
     private static final List<Class<? extends Hunter>> HUNTERS = Arrays.asList(
             FileHunter.class,
             NetworkHunter.class
+            //TODO MediaStore support
     );
 
     /**
@@ -97,14 +103,45 @@ public final class SoBitmap {
         return INSTANCE;
     }
 
+    /**
+     * User can set SoBitmap's singleton instance to follow what he want by using this method. The Builder{@link com.github.airk.tool.sobitmap.SoBitmap.Builder}
+     * can give users more opportunity to custom SoBitmap but not invoke the SoBitmap's constructor immediately, so we can keep SoBitmap's singleton mode safe.
+     * ps: the method must be invoked before {@link #getInstance(android.content.Context)}, otherwise there will be a IllegalArgumentException.
+     *
+     * @param context Context
+     * @param builder {@link com.github.airk.tool.sobitmap.SoBitmap.Builder}
+     * @return SoBitmap instance
+     */
+    public static SoBitmap setInstanceByBuilder(Context context, Builder builder) {
+        if (INSTANCE != null) {
+            throw new IllegalArgumentException("Singleton instance has been created, please call this method before getInstance(Context)");
+        }
+        INSTANCE = new SoBitmap(context, builder.useExternalCache);
+        return INSTANCE;
+    }
+
+    /**
+     * Custom SoBitmap singleton instance. Now just support setup whether use external cache file.
+     */
+    public static class Builder {
+        boolean useExternalCache = true;
+
+        public void setUseExternalCache(boolean useExternalCache) {
+            this.useExternalCache = useExternalCache;
+        }
+    }
+
     private SoBitmap(Context context) {
+        this(context, true);
+    }
+
+    private SoBitmap(Context context, boolean useExternalCache) {
         if (LOG) {
             Log.d(TAG, "New instance.");
         }
         DisplayMetrics dm = context.getResources().getDisplayMetrics();
-        defaultOps = new Options(DEFAULT_MAX_INPUT, DEFAULT_MAX_OUTPUT,
-                Math.max(dm.heightPixels, dm.widthPixels) * 2, DEFAULT_QUALITY_STEP, Bitmap.CompressFormat.JPEG);
-
+        int max = Math.max(dm.heightPixels, dm.widthPixels) * 2;
+        defaultOps = new Options(max, Bitmap.CompressFormat.JPEG, DEFAULT_LEVEL);
         requestMap = new ConcurrentHashMap<>();
         for (Class<? extends Hunter> cls : HUNTERS) {
             try {
@@ -112,10 +149,15 @@ public final class SoBitmap {
             } catch (InstantiationException | IllegalAccessException ignore) {
             }
         }
-        if (context.getExternalCacheDir() == null) {
-            cacheDir = context.getCacheDir();
+        if (useExternalCache) {
+            if (context.getExternalCacheDir() == null) {
+                Log.w(TAG, "External storage invalid, use internal instead.");
+                cacheDir = context.getCacheDir();
+            } else {
+                cacheDir = context.getExternalCacheDir();
+            }
         } else {
-            cacheDir = context.getExternalCacheDir();
+            cacheDir = context.getCacheDir();
         }
     }
 
@@ -201,6 +243,38 @@ public final class SoBitmap {
         }
         requestMap.put(request.key, request);
         return true;
+    }
+
+    /**
+     * Get bitmap result immediately and you really should not call this on the UI thread,
+     * you can not either in the fact.
+     *
+     * @param tag Tag the request.
+     * @param uri the bitmap's source.
+     * @return Bitmap result
+     * @throws InterruptedException this request maybe interrupt, please treat it rightly.
+     */
+    //TODO test
+    public Bitmap huntBlock(String tag, Uri uri) throws InterruptedException {
+        if (Util.checkMainThread()) {
+            throw new RuntimeException("You never should call this on UI thread, please fix it.");
+        }
+        final CountDownLatch latch = new CountDownLatch(1);
+        final Bitmap[] ret = {null};
+        hunt(tag, uri, new Callback() {
+            @Override
+            public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
+                ret[0] = bitmap;
+                latch.countDown();
+            }
+
+            @Override
+            public void onException(HuntException e) {
+                latch.countDown();
+            }
+        });
+        latch.await();
+        return ret[0];
     }
 
     /**
