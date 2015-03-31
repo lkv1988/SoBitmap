@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.github.airk.tool.sobitmap.simple;
+package com.github.airk.tool.sobitmap.sample;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;

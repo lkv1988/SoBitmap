@@ -1,1 +1,1 @@
-include ':simple', ':sobitmap'
+include ':sample', ':sobitmap'
