@@ -1,27 +1,21 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:layout_margin="16dp"
     tools:context=".MainActivity">
 
-    <ImageView
-        android:id="@+id/image"
+    <Button
+        android:id="@+id/normal"
+        android:text="Normal"
+        android:textAllCaps="false"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-    <ProgressBar
-        android:id="@+id/progress"
-        android:layout_gravity="center"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
-
-    <TextView
-        android:id="@+id/exception_info"
-        android:shadowColor="@android:color/white"
-        android:shadowRadius="8"
-        android:shadowDx="2"
-        android:shadowDy="2"
-        android:layout_gravity="center"
-        android:layout_width="wrap_content"
+    <Button
+        android:id="@+id/thumb"
+        android:text="Thumb"
+        android:textAllCaps="false"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content" />
-</FrameLayout>
+</LinearLayout>

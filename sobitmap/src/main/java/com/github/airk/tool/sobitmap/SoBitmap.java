@@ -83,8 +83,8 @@ public final class SoBitmap {
 
     private static final List<Class<? extends Hunter>> HUNTERS = Arrays.asList(
             FileHunter.class,
-            NetworkHunter.class
-            //TODO MediaStore support
+            NetworkHunter.class,
+            MediaStoreHunter.class
     );
 
     /**

@@ -149,7 +149,7 @@ abstract class Hunter {
                 Log.w(SoBitmap.TAG, tag() + ": Recursion! Reason: OOM!");
             }
             request.e = new HuntException(HuntException.REASON_OOM);
-            request.quality -= request.options.qualityStep;
+            request.quality -= qStep;
             decode();
         } catch (IOException ignore) {
             if (SoBitmap.LOG) {
