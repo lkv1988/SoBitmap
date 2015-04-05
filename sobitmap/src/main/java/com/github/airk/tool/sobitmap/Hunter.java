@@ -60,6 +60,9 @@ abstract class Hunter {
     private File cacheFile;
     private boolean abort = false;
 
+    private long maxOutput = -1L;
+    private int qStep = -1;
+
     public void hunt(Request request) {
         if (SoBitmap.LOG) {
             Log.d(SoBitmap.TAG, tag() + ":Pre-hunt call.");
@@ -77,6 +80,15 @@ abstract class Hunter {
             return;
         }
         request.startDecodeMs = System.currentTimeMillis();
+
+        Options o = request.options;
+        if (o.onlyLevel) {
+            maxOutput = (long) (Util.getAvailableMemorySize(request.context) * o.level.getMemoryFactor());
+            qStep = o.level.getStep();
+        } else {
+            maxOutput = request.options.maxOutput;
+            qStep = request.options.qualityStep;
+        }
         decode();
     }
 
@@ -110,11 +122,11 @@ abstract class Hunter {
             bitmap.compress(request.options.format, request.quality, os);
             bitmap.recycle();
 
-            if (os.toByteArray().length / 1024 > request.options.maxOutput) {
+            if (os.toByteArray().length / 1024 > maxOutput) {
                 if (SoBitmap.LOG) {
                     Log.w(SoBitmap.TAG, tag() + ": Recursion! Reason: not small enough!");
                 }
-                int newQ = request.quality - request.options.qualityStep;
+                int newQ = request.quality - qStep;
                 if (newQ <= 0) {
                     if (SoBitmap.LOG) {
                         Log.w(SoBitmap.TAG, tag() + ": Abort! The quality is too low.");

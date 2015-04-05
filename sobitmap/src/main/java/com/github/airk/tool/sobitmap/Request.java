@@ -16,11 +16,11 @@
 
 package com.github.airk.tool.sobitmap;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Handler;
-import android.os.Message;
 
 import java.io.File;
 import java.util.concurrent.Future;
@@ -31,6 +31,7 @@ import java.util.concurrent.Future;
  * Bitmap hunt request
  */
 final class Request implements Callback, Runnable {
+    final Context context;
     final String tag;
     final Uri source;
     final Options options;
@@ -47,7 +48,8 @@ final class Request implements Callback, Runnable {
 
     private final Handler handler;
 
-    Request(String tag, Uri source, Options options, Callback callback, Hunter target, Handler handler, File dir) {
+    Request(Context context, String tag, Uri source, Options options, Callback callback, Hunter target, Handler handler, File dir) {
+        this.context = context;
         if (tag == null) {
             this.tag = "sobitmap_request_" + Integer.toHexString(this.hashCode());
         } else {

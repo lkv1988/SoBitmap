@@ -50,6 +50,7 @@ public final class SoBitmap {
     static boolean LOG = Log.isLoggable(TAG, Log.VERBOSE);
 
     private volatile static SoBitmap INSTANCE;
+    private Context context;
     private Options defaultOps;
     private File cacheDir;
     //TODO multi thread support
@@ -139,6 +140,7 @@ public final class SoBitmap {
         if (LOG) {
             Log.d(TAG, "New instance.");
         }
+        this.context = context.getApplicationContext();
         DisplayMetrics dm = context.getResources().getDisplayMetrics();
         int max = Math.max(dm.heightPixels, dm.widthPixels) * 2;
         defaultOps = new Options(max, Bitmap.CompressFormat.JPEG, DEFAULT_LEVEL);
@@ -289,7 +291,7 @@ public final class SoBitmap {
             }
         }
         if (hunter != null) {
-            return new Request(tag, uri, options, callback, hunter, uiHandler, cacheDir);
+            return new Request(context, tag, uri, options, callback, hunter, uiHandler, cacheDir);
         }
         return null;
     }
