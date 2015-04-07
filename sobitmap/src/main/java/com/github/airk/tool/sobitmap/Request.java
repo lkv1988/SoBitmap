@@ -51,7 +51,7 @@ final class Request implements Callback, Runnable {
     Request(Context context, String tag, Uri source, Options options, Callback callback, Hunter target, Handler handler, File dir) {
         this.context = context;
         if (tag == null) {
-            this.tag = "sobitmap_request_" + Integer.toHexString(this.hashCode());
+            this.tag = "sobitmap:request:" + Integer.toHexString(this.hashCode());
         } else {
             this.tag = tag;
         }

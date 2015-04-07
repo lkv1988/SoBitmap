@@ -25,7 +25,7 @@ import android.graphics.BitmapFactory;
  * Hunter's callback
  */
 public interface Callback {
-    public void onHunted(Bitmap bitmap, BitmapFactory.Options options);
+    void onHunted(Bitmap bitmap, BitmapFactory.Options options);
 
-    public void onException(HuntException e);
+    void onException(HuntException e);
 }

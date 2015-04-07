@@ -49,7 +49,7 @@ public final class SoBitmap {
      */
     static boolean LOG = Log.isLoggable(TAG, Log.VERBOSE);
 
-    private volatile static SoBitmap INSTANCE;
+    private volatile static SoBitmap sInstance;
     private Context context;
     private Options defaultOps;
     private File cacheDir;
@@ -94,31 +94,31 @@ public final class SoBitmap {
      * @return SoBitmap instance
      */
     public static SoBitmap getInstance(Context context) {
-        if (INSTANCE == null) {
+        if (sInstance == null) {
             synchronized (SoBitmap.class) {
-                if (INSTANCE == null) {
-                    INSTANCE = new SoBitmap(context);
+                if (sInstance == null) {
+                    sInstance = new SoBitmap(context);
                 }
             }
         }
-        return INSTANCE;
+        return sInstance;
     }
 
     /**
      * User can set SoBitmap's singleton instance to follow what he want by using this method. The Builder{@link com.github.airk.tool.sobitmap.SoBitmap.Builder}
      * can give users more opportunity to custom SoBitmap but not invoke the SoBitmap's constructor immediately, so we can keep SoBitmap's singleton mode safe.
-     * ps: the method must be invoked before {@link #getInstance(android.content.Context)}, otherwise there will be a IllegalArgumentException.
+     * ps: the method must be invoked before {@link #getInstance(android.content.Context)}, otherwise there will be a IllegalStateException.
      *
      * @param context Context
      * @param builder {@link com.github.airk.tool.sobitmap.SoBitmap.Builder}
      * @return SoBitmap instance
      */
     public static SoBitmap setInstanceByBuilder(Context context, Builder builder) {
-        if (INSTANCE != null) {
-            throw new IllegalArgumentException("Singleton instance has been created, please call this method before getInstance(Context)");
+        if (sInstance != null) {
+            throw new IllegalStateException("Singleton instance has been created, please call this method before getInstance(Context)");
         }
-        INSTANCE = new SoBitmap(context, builder.useExternalCache);
-        return INSTANCE;
+        sInstance = new SoBitmap(context, builder.useExternalCache);
+        return sInstance;
     }
 
     /**
@@ -127,6 +127,11 @@ public final class SoBitmap {
     public static class Builder {
         boolean useExternalCache = true;
 
+        /**
+         * Shall SoBitmap use external storage for cache, default is true.
+         *
+         * @param useExternalCache true for use
+         */
         public void setUseExternalCache(boolean useExternalCache) {
             this.useExternalCache = useExternalCache;
         }
@@ -148,7 +153,7 @@ public final class SoBitmap {
         for (Class<? extends Hunter> cls : HUNTERS) {
             try {
                 hunterSet.add(cls.newInstance());
-            } catch (InstantiationException | IllegalAccessException ignore) {
+            } catch (Exception ignore) {
             }
         }
         if (useExternalCache) {
@@ -170,8 +175,8 @@ public final class SoBitmap {
      * @return SoBitmap single instance
      */
     public SoBitmap setDefaultOption(Options option) {
-        INSTANCE.defaultOps = option;
-        return INSTANCE;
+        sInstance.defaultOps = option;
+        return sInstance;
     }
 
     /**
@@ -182,7 +187,7 @@ public final class SoBitmap {
      * @return true if hunt in process successful, false otherwise
      */
     public boolean hunt(Uri uri, Callback callback) {
-        return hunt(null, uri, INSTANCE.defaultOps, callback);
+        return hunt(null, uri, sInstance.defaultOps, callback);
     }
 
     /**
@@ -194,7 +199,7 @@ public final class SoBitmap {
      * @return true if hunt in process successful, false otherwise
      */
     public boolean hunt(String tag, Uri uri, Callback callback) {
-        return hunt(tag, uri, INSTANCE.defaultOps, callback);
+        return hunt(tag, uri, sInstance.defaultOps, callback);
     }
 
     /**
@@ -326,7 +331,7 @@ public final class SoBitmap {
             Log.d(TAG, "SoBitmap Shutdown!");
         }
         executor.shutdownNow();
-        INSTANCE = null;
+        sInstance = null;
     }
 
 }

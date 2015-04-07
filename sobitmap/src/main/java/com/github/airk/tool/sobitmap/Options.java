@@ -51,7 +51,7 @@ public final class Options {
      */
     final Bitmap.CompressFormat format;
 
-    public static enum QualityLevel {
+    public enum QualityLevel {
         HIGH {
             @Override
             int getStep() {
@@ -97,6 +97,15 @@ public final class Options {
         abstract float getMemoryFactor();
     }
 
+    /**
+     * Use detail parameters construct display option
+     *
+     * @param maxInput    Max input in memory
+     * @param maxOutput   Max output in memory
+     * @param maxSize     The max display size in pixel
+     * @param qualityStep quality down step
+     * @param format      JPG\PNG\WEBP
+     */
     public Options(long maxInput, long maxOutput, int maxSize, int qualityStep, Bitmap.CompressFormat format) {
         this.maxInput = maxInput;
         this.maxOutput = maxOutput;
@@ -108,6 +117,13 @@ public final class Options {
         level = null;
     }
 
+    /**
+     * Use level to construct display option, don't care about the detail inside.
+     *
+     * @param maxSize The max display size in pixel
+     * @param format  JPG\PNG\WEBP
+     * @param level   {@link com.github.airk.tool.sobitmap.Options.QualityLevel}
+     */
     public Options(int maxSize, Bitmap.CompressFormat format, QualityLevel level) {
         this.maxSize = maxSize;
         this.format = format;
@@ -128,9 +144,8 @@ public final class Options {
         if (maxSize != options.maxSize) return false;
         if (qualityStep != options.qualityStep) return false;
         if (format != options.format) return false;
-        if (level != options.level) return false;
+        return level == options.level;
 
-        return true;
     }
 
     @Override
