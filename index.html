@@ -22,19 +22,23 @@
       <h1>
 <a id="sobitmap" class="anchor" href="#sobitmap" aria-hidden="true"><span class="octicon octicon-link"></span></a>SoBitmap</h1>
 
-<p>SoBitmap is a bitmap decode library for Android. Users can custom the max input memory size,
-the max output bitmap memory size and the picture size in pixel he can accept, then SoBitmap
-will do its best for producing the right bitmap for you. And of course, users have no need to
-warry about the OOM exception, SoBitmap have handled it inside.</p>
+<p>SoBitmap is not an ImageLoader, it born for process single bitmap. Some conditions, we want a image displayed in some limit, such as the max size, the memory cost and its format. SoBitmap handle these all for you, then release you to concern the real important things. You can totally use SoBitmap as a black box, the only things you need care are the input configuration and the output bitmap.</p>
 
 <h1>
 <a id="feature" class="anchor" href="#feature" aria-hidden="true"><span class="octicon octicon-link"></span></a>Feature</h1>
 
 <ul>
-<li>Support local file and network stream</li>
-<li>Custom option include max input\output and picture size, and the step of picture's quality, and bitmap compress format(JPG, PNG, WEBP)</li>
-<li>Use okhttp as the httpclient for downloading</li>
-<li>All callback happen in UI thread, no need to warry about it</li>
+<li>support local file, MediaStore and network stream</li>
+<li>
+<p>support two config way:</p>
+
+<ol>
+<li>exact limit include max input, max output, and compress quality down step</li>
+<li>fuzzy limit that you only need set a level or just by default.</li>
+</ol>
+</li>
+<li>use okhttp as httpclient for downloading, I think we can trust it(Shall we have a choice about it?)</li>
+<li>all callback heppen in UI thread, so relax about it</li>
 </ul>
 
 <h1>
@@ -59,7 +63,9 @@ dependencies {
 <h3>
 <a id="permissions" class="anchor" href="#permissions" aria-hidden="true"><span class="octicon octicon-link"></span></a>Permissions</h3>
 
-<pre><code>&lt;uses-permission android:name="android.permission.INTERNET" /&gt;
+<pre><code>&lt;!-- if SoBitmap need to load image from network --&gt;
+&lt;uses-permission android:name="android.permission.INTERNET" /&gt;
+&lt;!-- if your want use external storage for cache --&gt;
 &lt;uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" /&gt;
 &lt;uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /&gt;
 </code></pre>
@@ -67,30 +73,38 @@ dependencies {
 <h3>
 <a id="min-sdk" class="anchor" href="#min-sdk" aria-hidden="true"><span class="octicon octicon-link"></span></a>Min SDK</h3>
 
-<p>Api-9 (Android2.3)</p>
+<p>API9 (Android2.3)</p>
 
 <h3>
 <a id="custom-display-option" class="anchor" href="#custom-display-option" aria-hidden="true"><span class="octicon octicon-link"></span></a>Custom display option</h3>
 
-<pre><code>Options options = new Options.Builder()
-                .maxOutput(50) // max output in 50KB
-                .maxSize(1024) //max picture size in pixel
-                .format(Bitmap.CompressFormat.PNG)
-                .build();
-SoBitmap.getInstance(this).setDefaultOption(options);
+<h5>
+<a id="exactly" class="anchor" href="#exactly" aria-hidden="true"><span class="octicon octicon-link"></span></a>Exactly</h5>
+
+<pre><code>Options.ExactOptionsBuilder builder = new Options.ExactOptionsBuilder();
+builder.step(10)
+        .format(Bitmap.CompressFormat.JPEG)
+        .maxOutput(200)
+        .maxInput(10 * 1000)
+        .maxSize(5000);
+Options ops = builder.build();
 </code></pre>
 
-<blockquote>
-<p>The default option:</p>
-</blockquote>
+<h5>
+<a id="fuzzy" class="anchor" href="#fuzzy" aria-hidden="true"><span class="octicon octicon-link"></span></a>Fuzzy</h5>
 
-<ul>
-<li>MAX input 5MB</li>
-<li>MAX output 300KB</li>
-<li>STEP 15</li>
-<li>SIZE max screen size * 2</li>
-<li>Compress format JPEG</li>
-</ul>
+<pre><code>Options.FuzzyOptionsBuilder builder = new Options.FuzzyOptionsBuilder();
+builder.maxSize(5000)
+        .format(Bitmap.CompressFormat.PNG)
+        .level(Options.QualityLevel.HIGH);
+Options ops = builder.build();
+</code></pre>
+
+<h5>
+<a id="change-the-default-option" class="anchor" href="#change-the-default-option" aria-hidden="true"><span class="octicon octicon-link"></span></a>Change the default option</h5>
+
+<pre><code>SoBitmap.getInstance(context).setDefaultOption(myCustomOps);
+</code></pre>
 
 <h3>
 <a id="hunting-bitmap" class="anchor" href="#hunting-bitmap" aria-hidden="true"><span class="octicon octicon-link"></span></a>Hunting bitmap</h3>
@@ -109,11 +123,10 @@ SoBitmap.getInstance(this).setDefaultOption(options);
 </code></pre>
 
 <h1>
-<a id="todo-list" class="anchor" href="#todo-list" aria-hidden="true"><span class="octicon octicon-link"></span></a>
-<em>TODO List</em>:</h1>
+<a id="todo" class="anchor" href="#todo" aria-hidden="true"><span class="octicon octicon-link"></span></a>
+<em>TODO</em>:</h1>
 
 <ul>
-<li>MediaStore support</li>
 <li>Multi thread speed up the decoding duration</li>
 </ul>
 
