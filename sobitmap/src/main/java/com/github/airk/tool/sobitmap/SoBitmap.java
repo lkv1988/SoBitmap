@@ -260,7 +260,6 @@ public final class SoBitmap {
      * @return Bitmap result
      * @throws InterruptedException this request maybe interrupt, please treat it rightly.
      */
-    //TODO test
     public Bitmap huntBlock(String tag, @NonNull Uri uri) throws InterruptedException {
         if (Util.checkMainThread()) {
             throw new RuntimeException("You never should call this on UI thread, please fix it.");

@@ -165,7 +165,7 @@ public final class Options {
         }
 
         public ExactOptionsBuilder step(int step) {
-            if (step < 0 || step >= 100) {
+            if (step <= 0 || step >= 100) {
                 throw new IllegalArgumentException("Wrong step (" + step + "), please keep it in 0 ~ 100.");
             }
             this.step = step;

@@ -20,7 +20,6 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.test.ActivityInstrumentationTestCase2;
 import android.view.View;
 import android.widget.ImageView;
@@ -33,8 +32,6 @@ import com.github.airk.tool.sobitmap.Options;
 import com.github.airk.tool.sobitmap.SoBitmap;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,6 +45,7 @@ public class SoBitmapTest extends ActivityInstrumentationTestCase2<ImageActivity
     }
 
     private static final String TAG = "SoBitmapTest";
+    private static final int MAX_LOAD_COUNT = 20;
 
     Activity activity;
     Options smallOps;
@@ -66,6 +64,18 @@ public class SoBitmapTest extends ActivityInstrumentationTestCase2<ImageActivity
         img = (ImageView) activity.findViewById(R.id.img);
         tv = (TextView) activity.findViewById(R.id.out_info);
         scrollView = (ScrollView) activity.findViewById(R.id.scroll);
+        scrollView.post(new Runnable() {
+            @Override
+            public void run() {
+                scrollView.fullScroll(View.FOCUS_DOWN);
+            }
+        });
+    }
+
+    @Override
+    public void tearDown() throws Exception {
+        SoBitmap.getInstance(activity).shutdown();
+        super.tearDown();
     }
 
     class BlackHoleCallback implements Callback {
@@ -79,37 +89,17 @@ public class SoBitmapTest extends ActivityInstrumentationTestCase2<ImageActivity
         }
     }
 
-    static class TestCallback implements Callback {
-        final ImageView img;
-        final TextView tv;
-        Hook hook;
-
-        TestCallback(ImageView img, TextView tv) {
-            this.img = img;
-            this.tv = tv;
-        }
-
-        public void setHook(Hook hook) {
-            this.hook = hook;
-        }
-
-        interface Hook {
-            void onHuntHook();
-
-            void onExceptionHook();
-        }
+    class TestCallback implements Callback {
 
         @Override
         public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
             assertNotNull(bitmap);
             img.setImageBitmap(bitmap);
             tv.setText(String.format("W: %d, H: %d, M: %dKB", options.outWidth, options.outHeight, bitmap.getAllocationByteCount() / 1024));
-            hook.onHuntHook();
         }
 
         @Override
         public void onException(HuntException e) {
-            hook.onExceptionHook();
         }
     }
 
@@ -132,140 +122,135 @@ public class SoBitmapTest extends ActivityInstrumentationTestCase2<ImageActivity
 
     public void testExactOption() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
-        final LocalFileTask task = new LocalFileTask(activity, null);
-        setCallbackForAsyncTask(task, new AsyncCallback() {
-            @Override
-            public void onCallback(Object ret) {
-                latch.countDown();
-                assertTrue(ret instanceof List);
-                List<String> result = (List<String>) ret;
-                /** test device must have at least one <External storage>/DCIM/Camera picture. */
-                assertNotNull(result);
-                assertTrue(result.size() > 0);
-                Options.ExactOptionsBuilder builder = new Options.ExactOptionsBuilder();
-                builder.step(10)
-                        .format(Bitmap.CompressFormat.JPEG)
-                        .maxOutput(200)
-                        .maxInput(10 * 1000)
-                        .maxSize(5000);
-                SoBitmap.getInstance(activity).hunt(TAG, Uri.fromFile(new File(result.get(0))), builder.build(), new BlackHoleCallback());
-            }
-        });
-        task.execute();
+        List<String> result = new LocalFileTask(activity, null).execute().get();
+        /** test device must have at least one <External storage>/DCIM/Camera picture. */
+        assertNotNull(result);
+        assertTrue(result.size() > 0);
+        Options.ExactOptionsBuilder builder = new Options.ExactOptionsBuilder();
+        builder.step(10)
+                .format(Bitmap.CompressFormat.JPEG)
+                .maxOutput(200)
+                .maxInput(10 * 1000)
+                .maxSize(5000);
+        SoBitmap.getInstance(activity).hunt(TAG, Uri.fromFile(new File(result.get(0))),
+                builder.build(), new TestCallback() {
+                    @Override
+                    public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
+                        super.onHunted(bitmap, options);
+                        latch.countDown();
+                    }
+
+                    @Override
+                    public void onException(HuntException e) {
+                        super.onException(e);
+                        assertEquals(1, 2);
+                    }
+                });
         latch.await();
     }
 
     public void testFuzzyOption() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
-        final LocalFileTask task = new LocalFileTask(activity, null);
-        setCallbackForAsyncTask(task, new AsyncCallback() {
-            @Override
-            public void onCallback(Object ret) {
-                latch.countDown();
-                assertTrue(ret instanceof List);
-                List<String> result = (List<String>) ret;
-                assertNotNull(result);
-                assertTrue(result.size() > 0);
-                Options.FuzzyOptionsBuilder builder = new Options.FuzzyOptionsBuilder();
-                builder.maxSize(5000)
-                        .format(Bitmap.CompressFormat.PNG)
-                        .level(Options.QualityLevel.HIGH);
-                SoBitmap.getInstance(activity).hunt(TAG, Uri.fromFile(new File(result.get(0))), builder.build(), new BlackHoleCallback());
-            }
-        });
-        task.execute();
+        List<String> result = new LocalFileTask(activity, null).execute().get();
+        assertNotNull(result);
+        assertTrue(result.size() > 0);
+        Options.FuzzyOptionsBuilder builder = new Options.FuzzyOptionsBuilder();
+        builder.maxSize(5000)
+                .format(Bitmap.CompressFormat.PNG)
+                .level(Options.QualityLevel.HIGH);
+        SoBitmap.getInstance(activity).hunt(TAG, Uri.fromFile(new File(result.get(0))),
+                builder.build(), new TestCallback() {
+                    @Override
+                    public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
+                        super.onHunted(bitmap, options);
+                        latch.countDown();
+                    }
+
+                    @Override
+                    public void onException(HuntException e) {
+                        super.onException(e);
+                        assertEquals(1, 2);
+                    }
+                });
         latch.await();
     }
 
     public void testLocalFile() throws Exception {
-        scrollToBottom();
         final List<String> ret = new LocalFileTask(activity, null).execute().get();
         assertNotNull(ret);
-        final int testSize = ret.size() > 20 ? 20 : ret.size();
+        assertTrue(ret.size() > 0);
+        final int testSize = Math.min(MAX_LOAD_COUNT, ret.size());
         final CountDownLatch latch = new CountDownLatch(testSize);
         final AtomicInteger counter = new AtomicInteger(0);
 
         SoBitmap.getInstance(activity).setDefaultOption(smallOps);
-
-        final TestCallback callback = new TestCallback(img, tv);
-        callback.setHook(
-                new TestCallback.Hook() {
-                    @Override
-                    public void onHuntHook() {
-                        latch.countDown();
-                        int count = counter.incrementAndGet();
-                        if (count <= testSize - 1) {
-                            SoBitmap.getInstance(activity).hunt(Uri.fromFile(new File(ret.get(count))), callback);
-                        }
-                    }
-
-                    @Override
-                    public void onExceptionHook() {
-                        assertEquals(1, 2);
-                    }
-                });
-        SoBitmap.getInstance(activity).hunt(Uri.fromFile(new File(ret.get(counter.get()))), callback);
-        latch.await();
-    }
-
-    private void scrollToBottom() {
-        scrollView.post(new Runnable() {
+        SoBitmap.getInstance(activity).hunt(Uri.fromFile(new File(ret.get(counter.get()))), new TestCallback() {
             @Override
-            public void run() {
-                scrollView.fullScroll(View.FOCUS_DOWN);
-            }
-        });
-    }
-
-    public void testNetworkStream() throws Exception {
-        scrollToBottom();
-        final CountDownLatch latch = new CountDownLatch(ImageActivity.IMGS.length);
-        final AtomicInteger counter = new AtomicInteger(0);
-        final TestCallback callback = new TestCallback(img, tv);
-        callback.setHook(new TestCallback.Hook() {
-            @Override
-            public void onHuntHook() {
+            public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
+                super.onHunted(bitmap, options);
                 latch.countDown();
                 int count = counter.incrementAndGet();
-                if (count <= ImageActivity.IMGS.length - 1) {
-                    SoBitmap.getInstance(activity).hunt(Uri.parse(ImageActivity.IMGS[count]), callback);
+                if (count <= testSize - 1) {
+                    SoBitmap.getInstance(activity).hunt(Uri.fromFile(new File(ret.get(count))), this);
                 }
             }
 
             @Override
-            public void onExceptionHook() {
+            public void onException(HuntException e) {
+                super.onException(e);
                 assertEquals(1, 2);
             }
         });
-        SoBitmap.getInstance(activity).hunt(Uri.parse(ImageActivity.IMGS[counter.get()]), callback);
+        latch.await();
+    }
+
+    public void testNetworkStream() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(ImageActivity.IMGS.length);
+        final AtomicInteger counter = new AtomicInteger(0);
+        SoBitmap.getInstance(activity).hunt(Uri.parse(ImageActivity.IMGS[counter.get()]), new TestCallback() {
+            @Override
+            public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
+                super.onHunted(bitmap, options);
+                latch.countDown();
+                int count = counter.incrementAndGet();
+                if (count <= ImageActivity.IMGS.length - 1) {
+                    SoBitmap.getInstance(activity).hunt(Uri.parse(ImageActivity.IMGS[count]), this);
+                }
+            }
+
+            @Override
+            public void onException(HuntException e) {
+                super.onException(e);
+                assertEquals(1, 2);
+            }
+        });
         latch.await();
     }
 
     public void testMediaStore() throws Exception {
-        scrollToBottom();
         final List<String> result = new MediaStoreTask(activity, null).execute().get();
         assertNotNull(result);
-        final int testCount = Math.min(20, result.size());
+        final int testCount = Math.min(MAX_LOAD_COUNT, result.size());
         final CountDownLatch latch = new CountDownLatch(testCount);
         final AtomicInteger counter = new AtomicInteger(0);
         SoBitmap.getInstance(activity).setDefaultOption(smallOps);
-        final TestCallback callback = new TestCallback(img, tv);
-        callback.setHook(new TestCallback.Hook() {
+        SoBitmap.getInstance(activity).hunt(Uri.parse(result.get(counter.get())), new TestCallback() {
             @Override
-            public void onHuntHook() {
+            public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
+                super.onHunted(bitmap, options);
                 latch.countDown();
                 int count = counter.incrementAndGet();
                 if (count <= testCount - 1) {
-                    SoBitmap.getInstance(activity).hunt(Uri.parse(result.get(count)), callback);
+                    SoBitmap.getInstance(activity).hunt(Uri.parse(result.get(count)), this);
                 }
             }
 
             @Override
-            public void onExceptionHook() {
+            public void onException(HuntException e) {
+                super.onException(e);
                 assertEquals(1, 2);
             }
         });
-        SoBitmap.getInstance(activity).hunt(Uri.parse(result.get(counter.get())), callback);
         latch.await();
     }
 
@@ -278,14 +263,16 @@ public class SoBitmapTest extends ActivityInstrumentationTestCase2<ImageActivity
         Options.ExactOptionsBuilder builder = new Options.ExactOptionsBuilder();
         builder.maxOutput(1).maxInput(1);
 
-        SoBitmap.getInstance(activity).hunt(TAG, Uri.fromFile(new File(result.get(0))), builder.build(), new Callback() {
+        SoBitmap.getInstance(activity).hunt(TAG, Uri.fromFile(new File(result.get(0))), builder.build(), new TestCallback() {
             @Override
             public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
+                super.onHunted(bitmap, options);
                 assertEquals(1, 2);
             }
 
             @Override
             public void onException(HuntException e) {
+                super.onException(e);
                 assertEquals(e.getReason(), HuntException.REASON_TOO_LARGE);
                 latch.countDown();
             }
@@ -300,14 +287,16 @@ public class SoBitmapTest extends ActivityInstrumentationTestCase2<ImageActivity
         Options.ExactOptionsBuilder builder = new Options.ExactOptionsBuilder();
         builder.maxOutput(1).maxInput(1);
 
-        SoBitmap.getInstance(activity).hunt(TAG, target, builder.build(), new Callback() {
+        SoBitmap.getInstance(activity).hunt(TAG, target, builder.build(), new TestCallback() {
             @Override
             public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
+                super.onHunted(bitmap, options);
                 assertEquals(1, 2);
             }
 
             @Override
             public void onException(HuntException e) {
+                super.onException(e);
                 assertEquals(e.getReason(), HuntException.REASON_TOO_LARGE);
                 latch.countDown();
             }
@@ -316,6 +305,29 @@ public class SoBitmapTest extends ActivityInstrumentationTestCase2<ImageActivity
     }
 
     public void testInputLimitWithMediaStore() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        List<String> result = new MediaStoreTask(activity, null).execute().get();
+        assertNotNull(result);
+        assertTrue(result.size() > 0);
+
+        Options.ExactOptionsBuilder builder = new Options.ExactOptionsBuilder();
+        builder.maxOutput(1).maxInput(1);
+
+        SoBitmap.getInstance(activity).hunt(TAG, Uri.parse(result.get(0)), builder.build(), new TestCallback() {
+            @Override
+            public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
+                super.onHunted(bitmap, options);
+                assertEquals(1, 2);
+            }
+
+            @Override
+            public void onException(HuntException e) {
+                super.onException(e);
+                assertEquals(e.getReason(), HuntException.REASON_TOO_LARGE);
+                latch.countDown();
+            }
+        });
+        latch.await();
     }
 
     public void testOutputLimitWithXXX() throws Exception {
@@ -323,37 +335,184 @@ public class SoBitmapTest extends ActivityInstrumentationTestCase2<ImageActivity
     }
 
     public void testStepWithLocal() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        List<String> ret = new LocalFileTask(activity, null).execute().get();
+        assertNotNull(ret);
+        assertTrue(ret.size() > 0);
+        Options.ExactOptionsBuilder builder = new Options.ExactOptionsBuilder();
+        builder.maxOutput(10).step(20);
+        SoBitmap.getInstance(activity).hunt(TAG, Uri.fromFile(new File(ret.get(0))), builder.build(), new TestCallback() {
+            @Override
+            public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
+                super.onHunted(bitmap, options);
+                latch.countDown();
+            }
+
+            @Override
+            public void onException(HuntException e) {
+                super.onException(e);
+                assertEquals(1, 2);
+            }
+        });
+        latch.await();
+
+        Options.ExactOptionsBuilder builder1 = new Options.ExactOptionsBuilder();
+        try {
+            builder1.maxInput(10).maxOutput(10).step(0);
+            assertEquals(1, 2);
+        } catch (IllegalArgumentException ignore) {
+        }
+
+        Options.ExactOptionsBuilder builder2 = new Options.ExactOptionsBuilder();
+        try {
+            builder2.maxInput(10).maxOutput(10).step(100);
+            assertEquals(1, 2);
+        } catch (IllegalArgumentException ignore) {
+        }
+
+        Options.ExactOptionsBuilder builder3 = new Options.ExactOptionsBuilder();
+        try {
+            builder3.maxInput(10).maxOutput(10).step(-100);
+            assertEquals(1, 2);
+        } catch (IllegalArgumentException ignore) {
+        }
     }
 
+    //TODO compress error while OOM occurred
     public void testQualityLevelWithLocal() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        List<String> ret = new LocalFileTask(activity, null).execute().get();
+        assertNotNull(ret);
+        assertTrue(ret.size() > 0);
+        final SoBitmap soBitmap = SoBitmap.getInstance(activity);
+        final Uri target = Uri.fromFile(new File(ret.get(0)));
+        final Options.FuzzyOptionsBuilder builder = new Options.FuzzyOptionsBuilder();
+        soBitmap.hunt(TAG, target, builder.level(Options.QualityLevel.HIGH).build(), new TestCallback() {
+            @Override
+            public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
+                super.onHunted(bitmap, options);
+                soBitmap.hunt(TAG, target, builder.level(Options.QualityLevel.MEDIUM).build(), new TestCallback() {
+                    @Override
+                    public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
+                        super.onHunted(bitmap, options);
+                        soBitmap.hunt(TAG, target, builder.level(Options.QualityLevel.LOW).build(), new TestCallback() {
+                            @Override
+                            public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
+                                super.onHunted(bitmap, options);
+                                latch.countDown();
+                            }
+
+                            @Override
+                            public void onException(HuntException e) {
+                                super.onException(e);
+                                assertEquals(1, 2);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onException(HuntException e) {
+                        super.onException(e);
+                        assertEquals(1, 2);
+                    }
+                });
+            }
+
+            @Override
+            public void onException(HuntException e) {
+                super.onException(e);
+                assertEquals(1, 2);
+            }
+        });
+        latch.await();
     }
 
     public void testMaxSizeLimitWithLocal() throws Exception {
+        //TODO how to judge approximate value
     }
 
     public void testCompressFormatWithLocal() throws Exception {
-    }
+        final CountDownLatch latch = new CountDownLatch(1);
+        List<String> ret = new LocalFileTask(activity, null).execute().get();
+        assertNotNull(ret);
+        assertTrue(ret.size() > 0);
+        final SoBitmap soBitmap = SoBitmap.getInstance(activity);
+        final Uri target = Uri.fromFile(new File(ret.get(0)));
+        final Options.FuzzyOptionsBuilder builder = new Options.FuzzyOptionsBuilder();
+        soBitmap.hunt(TAG, target, builder.format(Bitmap.CompressFormat.JPEG).build(), new TestCallback() {
+            @Override
+            public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
+                super.onHunted(bitmap, options);
+                soBitmap.hunt(TAG, target, builder.format(Bitmap.CompressFormat.PNG).build(), new TestCallback() {
+                    @Override
+                    public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
+                        super.onHunted(bitmap, options);
+                        soBitmap.hunt(TAG, target, builder.format(Bitmap.CompressFormat.WEBP).build(), new TestCallback() {
+                            @Override
+                            public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
+                                super.onHunted(bitmap, options);
+                                latch.countDown();
+                            }
 
-    public void testTooLargeWithNetwork() throws Exception {
+                            @Override
+                            public void onException(HuntException e) {
+                                super.onException(e);
+                                assertEquals(1, 2);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onException(HuntException e) {
+                        super.onException(e);
+                        assertEquals(1, 2);
+                    }
+                });
+            }
+
+            @Override
+            public void onException(HuntException e) {
+                super.onException(e);
+                assertEquals(1, 2);
+            }
+        });
+        latch.await();
     }
 
     public void testNotFoundWithLocal() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        Uri target = Uri.fromFile(new File("/sdcard/dummy_file"));
+
+        SoBitmap.getInstance(activity).hunt(target, new TestCallback(){
+            @Override
+            public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
+                super.onHunted(bitmap, options);
+                assertEquals(1, 2);
+            }
+
+            @Override
+            public void onException(HuntException e) {
+                super.onException(e);
+                assertEquals(e.getReason(), HuntException.REASON_FILE_NOT_FOUND);
+                latch.countDown();
+            }
+        });
+
+        latch.await();
     }
 
-    public void testBlockBitmapWithLocal() throws Exception {
+    public void testBlockBitmapWithLocal() throws Throwable {
+        List<String> ret = new LocalFileTask(activity, null).execute().get();
+        assertNotNull(ret);
+        assertTrue(ret.size() > 0);
+        final Bitmap bitmap = SoBitmap.getInstance(activity).huntBlock(TAG, Uri.fromFile(new File(ret.get(0))));
+        assertNotNull(bitmap);
+        runTestOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                img.setImageBitmap(bitmap);
+            }
+        });
     }
 
-    private void setCallbackForAsyncTask(AsyncTask task, AsyncCallback callback) {
-        try {
-            Method m = task.getClass().getDeclaredMethod("setCallback", new Class[]{AsyncCallback.class});
-            m.setAccessible(true);
-            m.invoke(task, callback);
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-    }
 }

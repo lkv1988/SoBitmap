@@ -38,7 +38,6 @@ public class MediaStoreTask extends AsyncTask<Void, Void, List<String>> {
     ProgressDialog progressDialog;
     final Activity activity;
     final Spinner target;
-    AsyncCallback callback;
 
     public MediaStoreTask(Activity activity, Spinner target) {
         this.activity = activity;
@@ -46,11 +45,6 @@ public class MediaStoreTask extends AsyncTask<Void, Void, List<String>> {
         progressDialog = new ProgressDialog(activity);
         progressDialog.setCancelable(false);
         progressDialog.setCanceledOnTouchOutside(false);
-    }
-
-    //for test
-    private void setCallback(AsyncCallback callback) {
-        this.callback = callback;
     }
 
     @Override
@@ -63,9 +57,6 @@ public class MediaStoreTask extends AsyncTask<Void, Void, List<String>> {
     protected void onPostExecute(List<String> strings) {
         super.onPostExecute(strings);
         progressDialog.dismiss();
-        if (callback != null) {
-            callback.onCallback(strings);
-        }
         if (strings != null && target != null) {
             ArrayAdapter<String> adapter = new ArrayAdapter<>(activity, android.R.layout.simple_list_item_1, strings);
             target.setAdapter(adapter);
