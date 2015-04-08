@@ -30,6 +30,15 @@ final class MediaStoreHunter extends Hunter {
         }
         if (path != null) {
             f = new File(path);
+            if (!f.exists()) {
+                request.e = new HuntException(HuntException.REASON_FILE_NOT_FOUND);
+                return null;
+            } else {
+                if (!request.options.onlyLevel && f.length() / 1024 > request.options.maxInput) {
+                    request.e = new HuntException(HuntException.REASON_TOO_LARGE);
+                    return null;
+                }
+            }
         }
         return f;
     }

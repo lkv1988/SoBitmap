@@ -35,7 +35,15 @@ final class FileHunter extends Hunter {
 
     @Override
     File preCacheFile() {
-        return new File(request.source.getPath());
+        File f = new File(request.source.getPath());
+        if (!f.exists()) {
+            request.e = new HuntException(HuntException.REASON_FILE_NOT_FOUND);
+        } else {
+            if (!request.options.onlyLevel && f.length() / 1024 > request.options.maxInput) {
+                request.e = new HuntException(HuntException.REASON_TOO_LARGE);
+            }
+        }
+        return f;
     }
 
     @Override

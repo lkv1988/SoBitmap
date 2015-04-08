@@ -27,8 +27,8 @@ public final class Options {
     /**
      * 1. Use max input\output and step together
      */
-    long maxInput = -1L;
-    long maxOutput = -1L;
+    int maxInput = -1; // we are in kb
+    int maxOutput = -1;
     /**
      * Bitmap compress quality
      */
@@ -44,8 +44,10 @@ public final class Options {
 
     /**
      * The max output bitmap size for width and height in pixel.
+     * It's an approximate value, cause the inSampleSize always take the rounded down value nearest power of 2.
+     * (http://developer.android.com/intl/en-us/reference/android/graphics/BitmapFactory.Options.html#inSampleSize)
      */
-    final int maxSize;
+    int maxSize;
     /**
      * JPG, PNG, WEBP, if possible, highly recommend WEBP, fast and small for storage.
      */
@@ -97,39 +99,9 @@ public final class Options {
         abstract float getMemoryFactor();
     }
 
-    /**
-     * Use detail parameters construct display option
-     *
-     * @param maxInput    Max input in memory
-     * @param maxOutput   Max output in memory
-     * @param maxSize     The max display size in pixel
-     * @param qualityStep quality down step
-     * @param format      JPG\PNG\WEBP
-     */
-    public Options(long maxInput, long maxOutput, int maxSize, int qualityStep, Bitmap.CompressFormat format) {
-        this.maxInput = maxInput;
-        this.maxOutput = maxOutput;
-        this.maxSize = maxSize;
-        this.qualityStep = qualityStep;
-        this.format = format;
-
-        onlyLevel = false;
-        level = null;
-    }
-
-    /**
-     * Use level to construct display option, don't care about the detail inside.
-     *
-     * @param maxSize The max display size in pixel
-     * @param format  JPG\PNG\WEBP
-     * @param level   {@link com.github.airk.tool.sobitmap.Options.QualityLevel}
-     */
-    public Options(int maxSize, Bitmap.CompressFormat format, QualityLevel level) {
+    Options(int maxSize, Bitmap.CompressFormat format) {
         this.maxSize = maxSize;
         this.format = format;
-        this.level = level;
-
-        onlyLevel = true;
     }
 
     @Override
@@ -144,8 +116,8 @@ public final class Options {
         if (maxSize != options.maxSize) return false;
         if (qualityStep != options.qualityStep) return false;
         if (format != options.format) return false;
-        return level == options.level;
-
+        if (level != options.level) return false;
+        return true;
     }
 
     @Override
@@ -157,5 +129,99 @@ public final class Options {
         result = 31 * result + (format != null ? format.hashCode() : 0);
         result = 31 * result + (level != null ? level.hashCode() : 0);
         return result;
+    }
+
+    public static class ExactOptionsBuilder {
+        private Options opts;
+        private int maxInput = -1;
+        private int maxOutput = -1;
+        private int step = -1;
+
+        private int size = -1;
+        private Bitmap.CompressFormat format = Bitmap.CompressFormat.JPEG;
+
+        public ExactOptionsBuilder maxSize(int size) {
+            if (size < 0) {
+                throw new IllegalArgumentException("Max size must greater than 0.");
+            }
+            this.size = size;
+            return this;
+        }
+
+        public ExactOptionsBuilder maxInput(int kb) {
+            if (kb < 0) {
+                throw new IllegalArgumentException("Max input must greater than 0 and remember it's in KB.");
+            }
+            this.maxInput = kb;
+            return this;
+        }
+
+        public ExactOptionsBuilder maxOutput(int kb) {
+            if (kb < 0) {
+                throw new IllegalArgumentException("Max output must greater than 0 and remember it's in KB.");
+            }
+            this.maxOutput = kb;
+            return this;
+        }
+
+        public ExactOptionsBuilder step(int step) {
+            if (step < 0 || step >= 100) {
+                throw new IllegalArgumentException("Wrong step (" + step + "), please keep it in 0 ~ 100.");
+            }
+            this.step = step;
+            return this;
+        }
+
+        public ExactOptionsBuilder format(Bitmap.CompressFormat f) {
+            format = f;
+            return this;
+        }
+
+        public Options build() {
+            if (maxOutput == -1) {
+                throw new IllegalArgumentException("If you sure about using Exact options," +
+                        " at least you should set the max output memory size, otherwise you are recommended to use the FuzzyOptions.");
+            }
+            opts = new Options(size, format);
+            opts.maxOutput = maxOutput;
+            opts.maxInput = maxInput;
+            opts.qualityStep = step;
+
+            opts.onlyLevel = false;
+            opts.level = null;
+            return opts;
+        }
+    }
+
+    public static class FuzzyOptionsBuilder {
+        private Options opts;
+        private int size = -1;
+        private QualityLevel level = QualityLevel.MEDIUM;
+        private Bitmap.CompressFormat format = Bitmap.CompressFormat.JPEG;
+
+        public FuzzyOptionsBuilder maxSize(int size) {
+            if (size < 0) {
+                throw new IllegalArgumentException("Max size must greater than 0.");
+            }
+            this.size = size;
+            return this;
+        }
+
+        public FuzzyOptionsBuilder format(Bitmap.CompressFormat f) {
+            format = f;
+            return this;
+        }
+
+        public FuzzyOptionsBuilder level(QualityLevel l) {
+            level = l;
+            return this;
+        }
+
+        public Options build() {
+            opts = new Options(size, format);
+            opts.level = level;
+            opts.onlyLevel = true;
+            return opts;
+        }
     }
 }

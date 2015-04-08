@@ -1,15 +1,15 @@
 # SoBitmap
-SoBitmap is a bitmap decode library for Android. Users can custom the max input memory size,
-the max output bitmap memory size and the picture size in pixel he can accept, then SoBitmap
-will do its best for producing the right bitmap for you. And of course, users have no need to
-warry about the OOM exception, SoBitmap have handled it inside.
+SoBitmap is not an ImageLoader, it born for process single bitmap. Some conditions, we want a image displayed in some limit, such as the max size, the memory cost and its format. SoBitmap handle these all for you, then release you to concern the real important things. You can totally use SoBitmap as a black box, the only things you need care are the input configuration and the output bitmap.
 
 # Feature
 
-- Support local file and network stream
-- Custom option include max input\output and picture size, and the step of picture's quality, and bitmap compress format(JPG, PNG, WEBP)
-- Use okhttp as the httpclient for downloading
-- All callback happen in UI thread, no need to warry about it
+- support local file, MediaStore and network stream
+- support two config way:
+
+	1. exact limit include max input, max output, and compress quality down step
+	2. fuzzy limit that you only need set a level or just by default.
+- use okhttp as httpclient for downloading, I think we can trust it(Shall we have a choice about it?)
+- all callback heppen in UI thread, so relax about it
 
 # Usage
 
@@ -30,33 +30,43 @@ dependencies {
 ### Permissions
 
 ```
+<!-- if SoBitmap need to load image from network -->
 <uses-permission android:name="android.permission.INTERNET" />
+<!-- if your want use external storage for cache -->
 <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 ```
 
 ### Min SDK
 
-Api-9 (Android2.3)
+API9 (Android2.3)
 
 ### Custom display option
+
+#####Exactly
 ```
-Options options = new Options.Builder()
-                .maxOutput(50) // max output in 50KB
-                .maxSize(1024) //max picture size in pixel
-                .format(Bitmap.CompressFormat.PNG)
-                .build();
-SoBitmap.getInstance(this).setDefaultOption(options);
+Options.ExactOptionsBuilder builder = new Options.ExactOptionsBuilder();
+builder.step(10)
+        .format(Bitmap.CompressFormat.JPEG)
+        .maxOutput(200)
+        .maxInput(10 * 1000)
+        .maxSize(5000);
+Options ops = builder.build();
 ```
 
->The default option:
+#####Fuzzy
+```
+Options.FuzzyOptionsBuilder builder = new Options.FuzzyOptionsBuilder();
+builder.maxSize(5000)
+        .format(Bitmap.CompressFormat.PNG)
+        .level(Options.QualityLevel.HIGH);
+Options ops = builder.build();
+```
 
-- MAX input 5MB
-- MAX output 300KB
-- STEP 15
-- SIZE max screen size * 2
-- Compress format JPEG
-
+#####Change the default option
+```
+SoBitmap.getInstance(context).setDefaultOption(myCustomOps);
+```
 
 ### Hunting bitmap
 
@@ -74,9 +84,8 @@ SoBitmap.getInstance(this).hunt(uri, new Callback() {
         });
 ```
 
-# *TODO List*:
+# *TODO*:
 
-- MediaStore support
 - Multi thread speed up the decoding duration
 
 # License

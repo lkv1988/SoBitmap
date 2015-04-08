@@ -42,12 +42,12 @@ final class Util {
             final int heightRatio;
             final int widthRatio;
             if (reqHeight == 0) {
-                sampleSize = (int) Math.floor((float) width / (float) reqWidth);
+                sampleSize = Math.round((float) width / (float) reqWidth + 0.5f);
             } else if (reqWidth == 0) {
-                sampleSize = (int) Math.floor((float) height / (float) reqHeight);
+                sampleSize = Math.round((float) height / (float) reqHeight + 0.5f);
             } else {
-                heightRatio = (int) Math.floor((float) height / (float) reqHeight);
-                widthRatio = (int) Math.floor((float) width / (float) reqWidth);
+                heightRatio = Math.round((float) height / (float) reqHeight + 0.5f);
+                widthRatio = Math.round((float) width / (float) reqWidth + 0.5f);
                 sampleSize = Math.max(heightRatio, widthRatio);
             }
         }
@@ -75,18 +75,18 @@ final class Util {
         }
     }
 
-    //We just use 1/5 of the application's memory space
-    static long getAvailableMemorySize(Context context) {
+    //We just use 1/5 of the application's memory space, return in kb
+    static int getAvailableMemorySize(Context context) {
         ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        long ret = -1L;
+        int ret = -1;
         boolean largeHeap = false;
         if (Build.VERSION.SDK_INT >= 11) {
             largeHeap = (context.getApplicationInfo().flags & ApplicationInfo.FLAG_LARGE_HEAP) != 0;
             if (largeHeap)
-                ret = am.getLargeMemoryClass() * 1024 * 1024;
+                ret = am.getLargeMemoryClass() * 1024;
         }
         if (!largeHeap || Build.VERSION.SDK_INT < 11) {
-            ret = am.getMemoryClass() * 1024 * 1024;
+            ret = am.getMemoryClass() * 1024;
         }
         return ret / 5;
     }

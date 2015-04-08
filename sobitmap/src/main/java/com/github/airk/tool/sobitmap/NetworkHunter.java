@@ -63,24 +63,36 @@ final class NetworkHunter extends Hunter {
                 response.body().close();
                 request.e = new HuntException(HuntException.REASON_NETWORK_ERROR);
                 request.e.setExtra(response.code() + "");
-                request.onException(request.e);
                 return null;
             }
             if (SoBitmap.LOG) {
                 Log.d(SoBitmap.TAG, tag() + ": Downloading...");
+            }
+            String size = response.header("content-length");
+            if (size != null && !request.options.onlyLevel && Long.parseLong(size) > request.options.maxInput) {
+                request.e = new HuntException(HuntException.REASON_TOO_LARGE);
+                return null;
             }
             file = new File(request.cacheDir, request.tag);
             Util.inputStreamToFile(file, response.body().byteStream());
             if (SoBitmap.LOG) {
                 Log.d(SoBitmap.TAG, tag() + ": Downloaded to file -> " + file.getAbsolutePath());
             }
+            if (!file.exists()) { //UNLIKELY
+                request.e = new HuntException(HuntException.REASON_FILE_NOT_FOUND);
+                request.e.setExtra("Download success but file not found.");
+                return null;
+            } else {
+                if (!request.options.onlyLevel && file.length() / 1024 > request.options.maxInput) {
+                    request.e = new HuntException(HuntException.REASON_TOO_LARGE);
+                    return null;
+                }
+            }
         } catch (SocketException e) {
             e.printStackTrace();
             request.e = new HuntException(HuntException.REASON_NETWORK_ERROR);
-            request.onException(request.e);
         } catch (IOException ignore) {
             request.e = new HuntException(HuntException.REASON_IO_EXCEPTION);
-            request.onException(request.e);
         }
         return file;
     }

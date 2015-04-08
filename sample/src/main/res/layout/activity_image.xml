@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright 2015 Kevin Liu
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:fillViewport="true"
+    android:id="@+id/scroll"
+    android:scrollbars="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:padding="16dp"
+        android:orientation="vertical"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:text="Source"
+            android:textStyle="italic|bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <View
+            android:layout_margin="2dp"
+            android:background="@android:color/darker_gray"
+            android:layout_width="match_parent"
+            android:layout_height="1dp" />
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:text="Type"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <Spinner
+                android:id="@+id/source_type"
+                android:layout_marginLeft="8dp"
+                android:entries="@array/type"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <Spinner
+            android:id="@+id/choose_result"
+            android:layout_width="match_parent"
+            android:layout_height="40dp" />
+
+        <TextView
+            android:text="Configs"
+            android:textStyle="italic|bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <View
+            android:layout_margin="2dp"
+            android:background="@android:color/darker_gray"
+            android:layout_width="match_parent"
+            android:layout_height="1dp" />
+
+        <TableLayout
+            android:stretchColumns="1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TableRow
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:text="Max Input(KB)"
+                    android:layout_width="wrap_content" />
+
+                <EditText
+                    android:id="@+id/max_input"
+                    android:inputType="numberDecimal"
+                    android:layout_marginLeft="8dp" />
+            </TableRow>
+
+            <TableRow>
+
+                <TextView android:text="Max Output(KB)" />
+
+                <EditText
+                    android:id="@+id/max_output"
+                    android:inputType="numberDecimal"
+                    android:layout_marginLeft="8dp" />
+            </TableRow>
+
+            <TableRow>
+
+                <TextView android:text="Quality Step(Percent)" />
+
+                <EditText
+                    android:id="@+id/step"
+                    android:inputType="numberDecimal"
+                    android:layout_marginLeft="8dp" />
+            </TableRow>
+
+
+        </TableLayout>
+
+        <TextView
+            android:text="or"
+            android:padding="4dp"
+            android:gravity="center_horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:text="Quality Level"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content" />
+
+            <Spinner
+                android:id="@+id/quality_level"
+                android:entries="@array/level"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_marginLeft="8dp" />
+
+        </LinearLayout>
+
+        <TextView
+            android:text="Common"
+            android:textStyle="italic|bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <View
+            android:layout_margin="2dp"
+            android:background="@android:color/darker_gray"
+            android:layout_width="match_parent"
+            android:layout_height="1dp" />
+
+        <TableLayout
+            android:stretchColumns="1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TableRow
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:text="Max Size(Pixel)"
+                    android:layout_width="wrap_content" />
+
+                <EditText
+                    android:id="@+id/max_size"
+                    android:inputType="numberDecimal"
+                    android:layout_marginLeft="8dp" />
+            </TableRow>
+
+        </TableLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:text="Compress Format"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content" />
+
+            <Spinner
+                android:id="@+id/compress_format"
+                android:entries="@array/format"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_marginLeft="8dp" />
+
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <com.github.airk.tool.sobitmap.sample.SquareImageView
+                android:id="@+id/img"
+                android:background="@drawable/pic_frame"
+                android:scaleType="centerInside"
+                android:src="@mipmap/ic_launcher"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <ProgressBar
+                android:id="@+id/progress"
+                android:visibility="invisible"
+                android:layout_gravity="center"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/out_info"
+            android:layout_marginTop="4dp"
+            android:padding="2dp"
+            android:gravity="center"
+            android:background="#212121"
+            android:textColor="#f2f2f2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/hunt_btn"
+            android:textAllCaps="false"
+            android:text="Hunt!"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+</ScrollView>

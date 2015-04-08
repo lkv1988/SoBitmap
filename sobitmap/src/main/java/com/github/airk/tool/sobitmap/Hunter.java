@@ -60,7 +60,7 @@ abstract class Hunter {
     private File cacheFile;
     private boolean abort = false;
 
-    private long maxOutput = -1L;
+    private int maxOutput = -1;
     private int qStep = -1;
 
     public void hunt(Request request) {
@@ -70,20 +70,17 @@ abstract class Hunter {
         this.request = request;
         abort = false;
         request.startAllMs = System.currentTimeMillis();
+        //let sub-hunters handle own errors
         cacheFile = preCacheFile();
-        if (cacheFile == null || !cacheFile.exists()) {
-            Log.e(SoBitmap.TAG, tag() + ": cache file error.");
-            if (request.e == null) {
-                request.e = new HuntException(HuntException.REASON_FILE_NOT_FOUND);
-                request.onException(request.e);
-            }
+        if (request.e != null) {
+            request.onException(request.e);
             return;
         }
         request.startDecodeMs = System.currentTimeMillis();
 
         Options o = request.options;
         if (o.onlyLevel) {
-            maxOutput = (long) (Util.getAvailableMemorySize(request.context) * o.level.getMemoryFactor());
+            maxOutput = Math.round(Util.getAvailableMemorySize(request.context) * o.level.getMemoryFactor() - 0.5f);
             qStep = o.level.getStep();
         } else {
             maxOutput = request.options.maxOutput;
@@ -92,6 +89,7 @@ abstract class Hunter {
         decode();
     }
 
+    //TODO am I really resize the memory size a bitmap allocate
     private void decode() {
         request.recursionCount++;
         if (SoBitmap.LOG) {

@@ -5,7 +5,7 @@ android {
     buildToolsVersion "21.1.2"
 
     defaultConfig {
-        applicationId "com.github.airk.tool.sobitmap.simple"
+        applicationId "com.github.airk.tool.sobitmap.sample"
         minSdkVersion 9
         targetSdkVersion 21
         versionCode 1
@@ -25,7 +25,6 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:22.0.0'
-    compile 'com.squareup.picasso:picasso:2.5.2'
-    compile 'com.android.support:recyclerview-v7:22.0.0'
+    compile 'com.jakewharton:butterknife:6.1.0'
     compile project(':sobitmap')
 }

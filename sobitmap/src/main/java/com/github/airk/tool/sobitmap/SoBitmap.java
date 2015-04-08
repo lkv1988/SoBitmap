@@ -23,7 +23,7 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.util.DisplayMetrics;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.io.File;
@@ -56,14 +56,6 @@ public final class SoBitmap {
     //TODO multi thread support
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private LinkedHashSet<Hunter> hunterSet = new LinkedHashSet<>();
-
-    //TODO just for testcase
-    static final long DEFAULT_MAX_INPUT = 5 * 1024 * 1024; // 5MB
-    static final long DEFAULT_MAX_OUTPUT = 300 * 1024; //300k
-    static final int DEFAULT_QUALITY_STEP = 15;
-
-    static final Options.QualityLevel DEFAULT_LEVEL = Options.QualityLevel.MEDIUM;
-
     private ConcurrentHashMap<String, Request> requestMap;
 
     static final int MSG = 1;
@@ -113,7 +105,7 @@ public final class SoBitmap {
      * @param builder {@link com.github.airk.tool.sobitmap.SoBitmap.Builder}
      * @return SoBitmap instance
      */
-    public static SoBitmap setInstanceByBuilder(Context context, Builder builder) {
+    public static SoBitmap setInstanceByBuilder(@NonNull Context context, @NonNull Builder builder) {
         if (sInstance != null) {
             throw new IllegalStateException("Singleton instance has been created, please call this method before getInstance(Context)");
         }
@@ -132,8 +124,9 @@ public final class SoBitmap {
          *
          * @param useExternalCache true for use
          */
-        public void setUseExternalCache(boolean useExternalCache) {
+        public Builder setUseExternalCache(boolean useExternalCache) {
             this.useExternalCache = useExternalCache;
+            return this;
         }
     }
 
@@ -146,9 +139,7 @@ public final class SoBitmap {
             Log.d(TAG, "New instance.");
         }
         this.context = context.getApplicationContext();
-        DisplayMetrics dm = context.getResources().getDisplayMetrics();
-        int max = Math.max(dm.heightPixels, dm.widthPixels) * 2;
-        defaultOps = new Options(max, Bitmap.CompressFormat.JPEG, DEFAULT_LEVEL);
+        defaultOps = new Options.FuzzyOptionsBuilder().build();
         requestMap = new ConcurrentHashMap<>();
         for (Class<? extends Hunter> cls : HUNTERS) {
             try {
@@ -174,7 +165,10 @@ public final class SoBitmap {
      * @param option the default display option you want SoBitmap use
      * @return SoBitmap single instance
      */
-    public SoBitmap setDefaultOption(Options option) {
+    public SoBitmap setDefaultOption(@NonNull Options option) {
+        if (sInstance == null) {
+            throw new IllegalStateException("SoBitmap has been shutdown, please get a new one.");
+        }
         sInstance.defaultOps = option;
         return sInstance;
     }
@@ -186,7 +180,11 @@ public final class SoBitmap {
      * @param callback Callback to user {@link com.github.airk.tool.sobitmap.Callback}
      * @return true if hunt in process successful, false otherwise
      */
-    public boolean hunt(Uri uri, Callback callback) {
+    public boolean hunt(@NonNull Uri uri, @NonNull Callback callback) {
+        if (sInstance == null) {
+            Log.e(TAG, "SoBitmap has been shutdown. No more request can be handled");
+            return false;
+        }
         return hunt(null, uri, sInstance.defaultOps, callback);
     }
 
@@ -198,7 +196,11 @@ public final class SoBitmap {
      * @param callback Callback to user {@link com.github.airk.tool.sobitmap.Callback}
      * @return true if hunt in process successful, false otherwise
      */
-    public boolean hunt(String tag, Uri uri, Callback callback) {
+    public boolean hunt(String tag, @NonNull Uri uri, @NonNull Callback callback) {
+        if (sInstance == null) {
+            Log.e(TAG, "SoBitmap has been shutdown. No more request can be handled");
+            return false;
+        }
         return hunt(tag, uri, sInstance.defaultOps, callback);
     }
 
@@ -211,7 +213,7 @@ public final class SoBitmap {
      * @param callback Callback to user {@link com.github.airk.tool.sobitmap.Callback}
      * @return true if hunt in process successful, false otherwise
      */
-    public boolean hunt(String tag, Uri uri, Options options, Callback callback) {
+    public boolean hunt(String tag, @NonNull Uri uri, @NonNull Options options, @NonNull Callback callback) {
         if (LOG) {
             Log.d(TAG, "hunt call.");
         }
@@ -221,11 +223,8 @@ public final class SoBitmap {
             return false;
         }
 
-        if (uri == null || uri == Uri.EMPTY) {
+        if (uri == Uri.EMPTY) {
             throw new IllegalArgumentException("Empty uri is not allowed, please check it through.");
-        }
-        if (options == null) {
-            throw new IllegalArgumentException("Wrong options. Maybe you just give SoBitmap a NULL default display option.");
         }
 
         Request request = generateRequest(tag, uri, options, callback);
@@ -262,7 +261,7 @@ public final class SoBitmap {
      * @throws InterruptedException this request maybe interrupt, please treat it rightly.
      */
     //TODO test
-    public Bitmap huntBlock(String tag, Uri uri) throws InterruptedException {
+    public Bitmap huntBlock(String tag, @NonNull Uri uri) throws InterruptedException {
         if (Util.checkMainThread()) {
             throw new RuntimeException("You never should call this on UI thread, please fix it.");
         }

@@ -21,6 +21,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Handler;
+import android.util.DisplayMetrics;
+import android.util.Log;
 
 import java.io.File;
 import java.util.concurrent.Future;
@@ -31,6 +33,8 @@ import java.util.concurrent.Future;
  * Bitmap hunt request
  */
 final class Request implements Callback, Runnable {
+    private static final String TAG = "Request";
+
     final Context context;
     final String tag;
     final Uri source;
@@ -50,11 +54,7 @@ final class Request implements Callback, Runnable {
 
     Request(Context context, String tag, Uri source, Options options, Callback callback, Hunter target, Handler handler, File dir) {
         this.context = context;
-        if (tag == null) {
-            this.tag = "sobitmap:request:" + Integer.toHexString(this.hashCode());
-        } else {
-            this.tag = tag;
-        }
+        this.tag = "sobitmap:request:" + (tag == null ? Integer.toHexString(this.hashCode()) : tag);
         this.source = source;
         this.options = options;
         this.callback = callback;
@@ -62,7 +62,29 @@ final class Request implements Callback, Runnable {
         this.handler = handler;
         this.cacheDir = dir;
 
+        ensureOptions();
+
         key = "KEY:" + source.toString() + "&&" + Integer.toHexString(options.hashCode());
+    }
+
+    private void ensureOptions() {
+        if (options.maxSize < 0) {
+            DisplayMetrics dm = context.getResources().getDisplayMetrics();
+            options.maxSize = Math.max(dm.heightPixels, dm.widthPixels) * 2;
+        }
+        if (options.onlyLevel) {
+            if (options.level == null) {
+                Log.w(SoBitmap.TAG, TAG + " null quality level, will use the default one (MEDIUM) instead.");
+                options.level = Options.QualityLevel.MEDIUM;
+            }
+        } else {
+            if (options.maxInput < 0) {
+                options.maxInput = Integer.MAX_VALUE;
+            }
+            if (options.qualityStep < 0) {
+                options.qualityStep = 15;
+            }
+        }
     }
 
     @Override

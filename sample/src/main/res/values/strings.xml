@@ -3,4 +3,28 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string-array name="level">
+        <item>NONE</item>
+        <item>HIGH</item>
+        <item>MEDIUM</item>
+        <item>LOW</item>
+    </string-array>
+
+    <string-array name="format">
+        <item>JPEG</item>
+        <item>PNG</item>
+        <item>WEBP</item>
+    </string-array>
+
+    <string-array name="type">
+        <item>NONE</item>
+        <item>Local File</item>
+        <item>Network stream</item>
+        <item>MediaStore</item>
+    </string-array>
+
+    <string-array name="url_array">
+        <item>Normal(168K)</item>
+        <item>Big(2M)</item>
+    </string-array>
 </resources>
