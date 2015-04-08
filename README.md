@@ -1,3 +1,5 @@
+[![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-SoBitmap-brightgreen.svg?style=flat)](http://android-arsenal.com/details/1/1706)
+
 # SoBitmap
 SoBitmap is not an ImageLoader, it born for process single bitmap. Some conditions, we want a image displayed in some limit, such as the max size, the memory cost and its format. SoBitmap handle these all for you, then release you to concern the real important things. You can totally use SoBitmap as a black box, the only things you need care are the input configuration and the output bitmap.
 
