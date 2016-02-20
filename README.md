@@ -19,7 +19,7 @@ SoBitmap is not an ImageLoader, it born for process single bitmap. Some conditio
 
 - Gradle
 
-```
+```groovy
 repositories {
     maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 }
@@ -31,7 +31,7 @@ dependencies {
 
 ### Permissions
 
-```
+```xml
 <!-- if SoBitmap need to load image from network -->
 <uses-permission android:name="android.permission.INTERNET" />
 <!-- if your want use external storage for cache -->
@@ -46,7 +46,7 @@ API9 (Android2.3)
 ### Custom display option
 
 #####Exactly
-```
+```java
 Options.ExactOptionsBuilder builder = new Options.ExactOptionsBuilder();
 builder.step(10)
         .format(Bitmap.CompressFormat.JPEG)
@@ -57,7 +57,7 @@ Options ops = builder.build();
 ```
 
 #####Fuzzy
-```
+```java
 Options.FuzzyOptionsBuilder builder = new Options.FuzzyOptionsBuilder();
 builder.maxSize(5000)
         .format(Bitmap.CompressFormat.PNG)
@@ -66,13 +66,13 @@ Options ops = builder.build();
 ```
 
 #####Change the default option
-```
+```java
 SoBitmap.getInstance(context).setDefaultOption(myCustomOps);
 ```
 
 ### Hunting bitmap
 
-```
+```java
 SoBitmap.getInstance(this).hunt(uri, new Callback() {
             @Override
             public void onHunted(Bitmap bitmap, BitmapFactory.Options options) {
@@ -93,7 +93,7 @@ SoBitmap.getInstance(this).hunt(uri, new Callback() {
 # License
 
 ```
-Copyright 2015 Kevin Liu
+Copyright 2016 Kevin Liu
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
