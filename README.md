@@ -45,7 +45,7 @@ API9 (Android2.3)
 
 ### Custom display option
 
-#####Exactly
+##### Exactly
 ```java
 Options.ExactOptionsBuilder builder = new Options.ExactOptionsBuilder();
 builder.step(10)
@@ -56,7 +56,7 @@ builder.step(10)
 Options ops = builder.build();
 ```
 
-#####Fuzzy
+##### Fuzzy
 ```java
 Options.FuzzyOptionsBuilder builder = new Options.FuzzyOptionsBuilder();
 builder.maxSize(5000)
@@ -65,7 +65,7 @@ builder.maxSize(5000)
 Options ops = builder.build();
 ```
 
-#####Change the default option
+##### Change the default option
 ```java
 SoBitmap.getInstance(context).setDefaultOption(myCustomOps);
 ```
